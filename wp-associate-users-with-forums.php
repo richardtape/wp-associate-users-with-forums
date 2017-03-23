@@ -248,7 +248,7 @@ class WP_Associate_Users_With_Forms {
 		$forums = new WP_Query( array(
 			'post_type' => 'forum',
 			'post_status' => 'publish',
-			'posts_per_page' => 20,
+			'posts_per_page' => apply_filters( 'wpauwf_get_forum_ids_and_titles_posts_per_page', 20 ),
 			'order' => 'ASC',
 			'orderby' => 'ID',
 			'update_post_meta_cache' => false,
