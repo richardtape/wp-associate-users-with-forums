@@ -98,6 +98,22 @@ class WP_Associate_Users_With_Forms {
 
 
 	/**
+	 * Add our filter hook(s)
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param null
+	 * @return null
+	 */
+
+	public function add_filters() {
+
+		add_filter( 'bbp_user_can_view_forum', array( $this, 'bbp_user_can_view_forum__associated_users_view_only' ), 99, 3 );
+
+	}/* add_filters() */
+
+
+	/**
 	 * Add the forum association field to user profile screens
 	 * The user themselves can't see or save these fields.
 	 *
@@ -121,20 +137,6 @@ class WP_Associate_Users_With_Forms {
 		$this->forum_association_field_markup( $user, $forums_list );
 
 	}/* showedit_user_profile__add_fields() */
-
-
-	/**
-	 * Add our filter hook(s)
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param null
-	 * @return null
-	 */
-
-	public function add_filters() {
-
-	}/* add_filters() */
 
 
 	/**
@@ -245,8 +247,12 @@ class WP_Associate_Users_With_Forms {
 
 	public function get_forum_ids_and_titles() {
 
+		if ( ! function_exists( 'bbp_get_forum_post_type' ) ) {
+			return;
+		}
+
 		$forums = new WP_Query( array(
-			'post_type' => 'forum',
+			'post_type' => bbp_get_forum_post_type(),
 			'post_status' => 'publish',
 			'posts_per_page' => apply_filters( 'wpauwf_get_forum_ids_and_titles_posts_per_page', 20 ),
 			'order' => 'ASC',
@@ -313,6 +319,65 @@ class WP_Associate_Users_With_Forms {
 		update_user_meta( $user_id, 'forum_associations', $sanitized_associated_forums );
 
 	}/* personal_options_update__save_fields() */
+
+
+	/**
+	 * If a user is associated with a forum (per user meta) then allow them to view. Otherwise,
+	 * display a message informing them that they are unable to view this forum.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param (bool) $retval - whether to display the forum or not
+	 * @param (int) $forum_id - the ID of the forum being requested to display
+	 * @param (int) $user_id - The ID of the user trying to view the forum with ID $forum_id
+	 * @return (bool) True if the user should be able to see it, false otherwise
+	 */
+
+	public function bbp_user_can_view_forum__associated_users_view_only( $retval, $forum_id, $user_id ) {
+
+		if ( false === $this->can_user_view_forum( $user_id, $forum_id ) ) {
+			return false;
+		}
+
+		return $retval;
+
+	}/* bbp_user_can_view_forum__associated_users_view_only() */
+
+
+	/**
+	 * Can the specified user with ID $user_id view forum with ID $forum_id
+	 * We're interested in whether the given user ID has the passed forum ID
+	 * in their user meta 'forum_associations'. If it's there, the user can see
+	 * the forum (pending other rules). If it isn't, then they can't.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param (int) $user_id - the User's ID we're checking
+	 * @param (int) $forum_id - the ID of the forum post we're checking
+	 * @return bool
+	 */
+
+	public function can_user_view_forum( $user_id, $forum_id ) {
+
+		// Admins can.
+		if ( user_can( $user_id, 'manage_options' ) ) {
+			return true;
+		}
+
+		// Not an admin? Let's check your forum associations
+		$user_forum_associations = get_user_meta( $user_id, 'forum_associations', true );
+
+		// Don't have any forum associations? No dice.
+		if ( ! $user_forum_associations || empty( $user_forum_associations ) || ! is_array( $user_forum_associations ) ) {
+			return false;
+		}
+
+		// Have some, but this forum isn't in your list? No.
+		if ( ! in_array( $forum_id, $user_forum_associations, true ) ) {
+			return false;
+		}
+
+	}/* can_user_view_forum() */
 
 }/* WP_Associate_Users_With_Forms() */
 
