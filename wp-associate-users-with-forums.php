@@ -336,6 +336,14 @@ class WP_Associate_Users_With_Forms {
 	public function bbp_user_can_view_forum__associated_users_view_only( $retval, $forum_id, $user_id ) {
 
 		if ( false === $this->can_user_view_forum( $user_id, $forum_id ) ) {
+
+			// Output the message from the members plugin
+			$members_settings = get_option( 'members_settings' );
+
+			if ( $members_settings && is_array( $members_settings ) && isset( $members_settings['content_permissions_error'] ) ) {
+				echo wp_kses_post( $members_settings['content_permissions_error'] );
+			}
+
 			return false;
 		}
 
