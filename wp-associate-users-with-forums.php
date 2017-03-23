@@ -379,6 +379,93 @@ class WP_Associate_Users_With_Forms {
 
 	}/* can_user_view_forum() */
 
+
+	/**
+	 * A utility method usable outside of this class (as it's static and public) which
+	 * adds an association of a forum ID to a user. Basically adds the forum ID to
+	 * the 'forum_associations' user meta.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param (int) $user_id - the ID of the user we're changing
+	 * @param (int) $forum_id - the ID of the forum to which we're associating the user
+	 * @return null
+	 */
+
+	public static function associate_user_with_forum( $user_id, $forum_id ) {
+
+		// Sanitize and bail if we don't have what we need
+		$user_id	= absint( $user_id );
+		$forum_id	= absint( $user_id );
+
+		if ( ! $user_id || ! $forum_id ) {
+			return;
+		}
+
+		// Fetch the current meta.
+		$user_forum_associations = get_user_meta( $user_id, 'forum_associations', true );
+
+		// Should always be an array, but just in case.
+		if ( ! is_array( $user_forum_associations ) ) {
+			$user_forum_associations = array();
+		}
+
+		// Check if it already exists, don't double up.
+		if ( in_array( $forum_id, $user_forum_associations, true ) ) {
+			return;
+		}
+
+		// Add the association
+		$user_forum_associations[] = $forum_id;
+
+		update_user_meta( $user_id, 'forum_associations', $user_forum_associations );
+
+	}/* associate_user_with_forum() */
+
+
+	/**
+	 * Utility method to Disassociate a user from a forum. Removes the forum ID
+	 * from forum_associations user meta.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param (int) $user_id - the ID of the user we're changing
+	 * @param (int) $forum_id - the ID of the forum to which we're disassociating the user
+	 * @return null
+	 */
+
+	public static function disassociate_user_with_forum( $user_id, $forum_id ) {
+
+		// Sanitize and bail if we don't have what we need
+		$user_id	= absint( $user_id );
+		$forum_id	= absint( $user_id );
+
+		if ( ! $user_id || ! $forum_id ) {
+			return;
+		}
+
+		// Fetch the current meta.
+		$user_forum_associations = get_user_meta( $user_id, 'forum_associations', true );
+
+		// Should always be an array, but just in case.
+		if ( ! is_array( $user_forum_associations ) ) {
+			$user_forum_associations = array();
+		}
+
+		// Check if it doesn't exist. Can't remove something that isn't there.
+		if ( ! in_array( $forum_id, $user_forum_associations, true ) ) {
+			return;
+		}
+
+		// Remove
+		if ( ( $key = array_search( $forum_id, $user_forum_associations ) ) !== false ) {
+			unset( $user_forum_associations[ $key ] );
+		}
+
+		update_user_meta( $user_id, 'forum_associations', $user_forum_associations );
+
+	}/* disassociate_user_with_forum() */
+
 }/* WP_Associate_Users_With_Forms() */
 
 
