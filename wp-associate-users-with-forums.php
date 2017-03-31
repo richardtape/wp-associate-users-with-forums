@@ -110,6 +110,10 @@ class WP_Associate_Users_With_Forms {
 
 		add_filter( 'bbp_user_can_view_forum', array( $this, 'bbp_user_can_view_forum__associated_users_view_only' ), 99, 3 );
 
+		add_filter( 'bbp_get_template_part', array( $this, 'bbp_get_template_part__forum_archive_associated_users_view_only' ), 99, 3 );
+
+		return null;
+
 	}/* add_filters() */
 
 
@@ -351,6 +355,45 @@ class WP_Associate_Users_With_Forms {
 
 	}/* bbp_user_can_view_forum__associated_users_view_only() */
 
+	/**
+	 * Ensure that on the forum archive, we're only showing the forums to which
+	 * the current user is associated.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $templates - current templates to use
+	 * @param string $slug - prefix in template name
+	 * @param string $name - suffix in template name
+	 *
+	 * @return array The template(s) to use. Empty array if user can't view this current forum.
+	 */
+	public function bbp_get_template_part__forum_archive_associated_users_view_only( $templates, $slug, $name ) {
+
+		// Ensure we're on the forums archive listing
+		if ( ! is_archive( 'forum' ) ) {
+			return $templates;
+		}
+
+		// Ensure we're attempting to load the loop-single-forum.php template file
+		if ( 'loop' !== $slug || 'single-forum' !== $name ) {
+			return $templates;
+		}
+
+		// On the forum archive, in the single-forum loop template
+		// Need to ensure we're only loading this template for associated forums.
+		$user_id = get_current_user_id();
+		$forum_id = get_the_ID();
+
+		$can_view = $this->can_user_view_forum( $user_id, $forum_id );
+
+		// Not associated? You don't get to see this forum.
+		if ( ! $can_view ) {
+			return array();
+		}
+
+		return $templates;
+
+	}/* bbp_get_template_part__forum_archive_associated_users_view_only() */
 
 	/**
 	 * Can the specified user with ID $user_id view forum with ID $forum_id
