@@ -52,6 +52,8 @@ class WP_Associate_Users_With_Forms {
 		// Set up actions and filters as necessary
 		$this->add_hooks();
 
+		return null;
+
 	}/* init() */
 
 
@@ -71,6 +73,8 @@ class WP_Associate_Users_With_Forms {
 
 		// Add filter hooks
 		$this->add_filters();
+
+		return null;
 
 	}/* add_hooks() */
 
@@ -93,6 +97,10 @@ class WP_Associate_Users_With_Forms {
 		// Save the custom fields for the users
 		add_action( 'personal_options_update', array( $this, 'personal_options_update__save_fields' ) );
 		add_action( 'edit_user_profile_update', array( $this, 'personal_options_update__save_fields' ) );
+
+
+
+		return null;
 
 	}/* add_actions() */
 
@@ -139,6 +147,8 @@ class WP_Associate_Users_With_Forms {
 
 		// Display the fields
 		$this->forum_association_field_markup( $user, $forums_list );
+
+		return null;
 
 	}/* showedit_user_profile__add_fields() */
 
@@ -204,6 +214,8 @@ class WP_Associate_Users_With_Forms {
 
 		</table>
 		<?php
+
+		return;
 	}/* forum_association_field_markup() */
 
 
@@ -213,7 +225,7 @@ class WP_Associate_Users_With_Forms {
 	 * @since 1.0.0
 	 *
 	 * @param null
-	 * @return (string) Markup for the fields title
+	 * @return string Markup for the fields title
 	 */
 
 	public function get_forum_association_field_title_markup() {
@@ -229,7 +241,7 @@ class WP_Associate_Users_With_Forms {
 	 * @since 1.0.0
 	 *
 	 * @param null
-	 * @return (string) Markup for the message displayed when there's no forums
+	 * @return string Markup for the message displayed when there's no forums
 	 */
 
 	public function get_no_forums_message_markup() {
@@ -246,16 +258,16 @@ class WP_Associate_Users_With_Forms {
 	 * @since 1.0.0
 	 *
 	 * @param null
-	 * @return (array) An (associative) array of (published) forum IDs => forum titles
+	 * @return mixed An (associative) array of (published) forum IDs => forum titles
 	 */
 
 	public function get_forum_ids_and_titles() {
 
 		if ( ! function_exists( 'bbp_get_forum_post_type' ) ) {
-			return;
+			return false;
 		}
 
-		$forums = new WP_Query( array(
+		$forums = new \WP_Query( array(
 			'post_type' => bbp_get_forum_post_type(),
 			'post_status' => 'publish',
 			'posts_per_page' => apply_filters( 'wpauwf_get_forum_ids_and_titles_posts_per_page', 20 ),
@@ -299,7 +311,7 @@ class WP_Associate_Users_With_Forms {
 	public function personal_options_update__save_fields( $user_id ) {
 
 		if ( ! $this->can_current_user_see_forum_association_fields() ) {
-			return;
+			return null;
 		}
 
 		$submitted_associated_forums = isset( $_POST['forum_associations'] ) ? $_POST['forum_associations'] : false;
@@ -307,7 +319,7 @@ class WP_Associate_Users_With_Forms {
 		// If empty, remove all associations
 		if ( false === $submitted_associated_forums ) {
 			update_user_meta( $user_id, 'forum_associations', array() );
-			return;
+			return null;
 		}
 
 		// We have something in $_POST['forum_associations'] which will be an array of forum IDs
@@ -316,12 +328,13 @@ class WP_Associate_Users_With_Forms {
 
 		foreach ( $submitted_associated_forums as $forum_id => $value ) {
 			$sanitized_forum_id = absint( $forum_id );
-			$sanitized_associated_forums[] = $forum_id;
+			$sanitized_associated_forums[] = $sanitized_forum_id;
 		}
 
 		// Now we have an array of forum IDs for which this user should be associated. Update user meta appropriately.
 		update_user_meta( $user_id, 'forum_associations', $sanitized_associated_forums );
 
+		return null;
 	}/* personal_options_update__save_fields() */
 
 
@@ -334,7 +347,7 @@ class WP_Associate_Users_With_Forms {
 	 * @param (bool) $retval - whether to display the forum or not
 	 * @param (int) $forum_id - the ID of the forum being requested to display
 	 * @param (int) $user_id - The ID of the user trying to view the forum with ID $forum_id
-	 * @return (bool) True if the user should be able to see it, false otherwise
+	 * @return bool True if the user should be able to see it, false otherwise
 	 */
 
 	public function bbp_user_can_view_forum__associated_users_view_only( $retval, $forum_id, $user_id ) {
@@ -428,8 +441,9 @@ class WP_Associate_Users_With_Forms {
 			return false;
 		}
 
-	}/* can_user_view_forum() */
+		return true;
 
+	}/* can_user_view_forum() */
 
 	/**
 	 * A utility method usable outside of this class (as it's static and public) which
@@ -447,10 +461,10 @@ class WP_Associate_Users_With_Forms {
 
 		// Sanitize and bail if we don't have what we need
 		$user_id	= absint( $user_id );
-		$forum_id	= absint( $user_id );
+		$forum_id	= absint( $forum_id );
 
 		if ( ! $user_id || ! $forum_id ) {
-			return;
+			return null;
 		}
 
 		// Fetch the current meta.
@@ -463,13 +477,15 @@ class WP_Associate_Users_With_Forms {
 
 		// Check if it already exists, don't double up.
 		if ( in_array( $forum_id, $user_forum_associations, true ) ) {
-			return;
+			return null;
 		}
 
 		// Add the association
 		$user_forum_associations[] = $forum_id;
 
 		update_user_meta( $user_id, 'forum_associations', $user_forum_associations );
+
+		return null;
 
 	}/* associate_user_with_forum() */
 
@@ -489,7 +505,7 @@ class WP_Associate_Users_With_Forms {
 
 		// Sanitize and bail if we don't have what we need
 		$user_id	= absint( $user_id );
-		$forum_id	= absint( $user_id );
+		$forum_id	= absint( $forum_id );
 
 		if ( ! $user_id || ! $forum_id ) {
 			return;
@@ -515,6 +531,8 @@ class WP_Associate_Users_With_Forms {
 
 		update_user_meta( $user_id, 'forum_associations', $user_forum_associations );
 
+		return null;
+
 	}/* disassociate_user_with_forum() */
 
 }/* WP_Associate_Users_With_Forms() */
@@ -536,5 +554,7 @@ function rt_wp_associate_users_with_forums() {
 
 	$wpauwf = new WP_Associate_Users_With_Forms();
 	$wpauwf->init();
+
+	return null;
 
 }/* rt_wp_associate_users_with_forums() */
