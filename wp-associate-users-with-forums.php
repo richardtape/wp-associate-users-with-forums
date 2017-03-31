@@ -399,9 +399,11 @@ class WP_Associate_Users_With_Forms {
 
 		$can_view = $this->can_user_view_forum( $user_id, $forum_id );
 
-		// Not associated? You don't get to see this forum.
+		// Not associated? You don't get to see this forum. Have to use a made-up name
+		// otherwise bbPress throws a PHP Warning for a variable that doesn't exist if you
+		// return an empty array.
 		if ( ! $can_view ) {
-			return array();
+			return array( 'no-diggity.php' );
 		}
 
 		return $templates;
