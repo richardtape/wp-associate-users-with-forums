@@ -98,8 +98,6 @@ class WP_Associate_Users_With_Forms {
 		add_action( 'personal_options_update', array( $this, 'personal_options_update__save_fields' ) );
 		add_action( 'edit_user_profile_update', array( $this, 'personal_options_update__save_fields' ) );
 
-
-
 		return null;
 
 	}/* add_actions() */
@@ -119,6 +117,8 @@ class WP_Associate_Users_With_Forms {
 		add_filter( 'bbp_user_can_view_forum', array( $this, 'bbp_user_can_view_forum__associated_users_view_only' ), 99, 3 );
 
 		add_filter( 'bbp_get_template_part', array( $this, 'bbp_get_template_part__forum_archive_associated_users_view_only' ), 99, 3 );
+
+		add_filter( 'body_class', array( $this, 'body_class__add_body_class_for_those_who_can_see_forums' ), 10, 2 );
 
 		return null;
 
@@ -314,6 +314,7 @@ class WP_Associate_Users_With_Forms {
 			return null;
 		}
 
+		// Sanitized in foreach below
 		$submitted_associated_forums = isset( $_POST['forum_associations'] ) ? $_POST['forum_associations'] : false;
 
 		// If empty, remove all associations
@@ -446,6 +447,76 @@ class WP_Associate_Users_With_Forms {
 		return true;
 
 	}/* can_user_view_forum() */
+
+
+	/**
+	 * Determine if the passed $user_id can view at least one forum.
+	 * This is true if the user has been associated with a forum, or if they can manage_options.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int|false $user_id The ID of the User to check or false for currently logged in user.
+	 * @return bool True if a user can view at least one forum, false otherwise.
+	 */
+
+	public function can_user_view_at_least_one_forum( $user_id = false ) {
+
+		// No ID passed? Use current user
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
+
+		// Still no dice? Bail.
+		if ( ! $user_id ) {
+			return false;
+		}
+
+		// Admins always can see
+		if ( current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+
+		// Fetch the current meta for this user who isn't an admin.
+		$user_forum_associations = get_user_meta( $user_id, 'forum_associations', true );
+
+		// If we don't have any forum associations, or an empty array, no body class.
+		if ( ! $user_forum_associations || empty( $user_forum_associations ) || ( is_array( $user_forum_associations ) && count( $user_forum_associations ) < 1 ) ) {
+			return false;
+		}
+
+		// We have forum associations, so they can see at least one forum
+		return true;
+
+	}/* can_user_view_at_least_one_forum() */
+
+
+	/**
+	 * Add a body class to say that the currently signed in user is able to see at least one forum.
+	 * This allows us to hide/show items specifically for those users.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $classes An array of body classes.
+	 * @param array $class An array of additional classes added to the body.
+	 * @return array Adjusted $classes if necessary
+	 */
+
+	public function body_class__add_body_class_for_those_who_can_see_forums( $classes, $class ) {
+
+		if ( ! is_user_logged_in() ) {
+			return $classes;
+		}
+
+		$one_forum = $this->can_user_view_at_least_one_forum();
+
+		if ( ! $one_forum ) {
+			return $classes;
+		}
+
+		return array_merge( $classes, array( 'has-forum-access' ) );
+
+	}/* body_class__add_body_class_for_those_who_can_see_forums() */
+
 
 	/**
 	 * A utility method usable outside of this class (as it's static and public) which
